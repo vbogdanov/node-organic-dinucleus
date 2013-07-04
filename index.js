@@ -1,31 +1,48 @@
 var uuid = require("node-uuid");
 var util = require("util");
 var synapse = require("organic-synapse");
-var organic = require("organic");
 
-module.exports = function Nucleus(plasma, dna){
+module.exports = function DINucleus(plasma, dna){
   this.plasma = plasma;
-  this.dna = dna instanceof DNA?dna:new DNA(dna);
+  this.dna = dna;
   
   var self = this;
-  var organellesMap = Object.create(null);
+  this.organellesMap = Object.create(null);
   this.definitionMap = Object.create(null);
   
   self.buildOne = function(c, callback){
-    //TODO:
+    if (typeof c !== "string")
+      throw "IllegalArgumentException: " + typeof c;
+    var result = self.resolveFactoryByName(c)();
+    callback && callback(result);
+    return result;
   }
   
   self.build = function(c, callback){
-    //TODO:
+    if (typeof c === "string")
+      return self.buildOne(c, callback);
+    else {
+      var result = [];
+      for (var key in self.dna) {
+        if (typeof self.dna[key] !== "function") {
+          var factory = self.resolveFactoryByName(key);
+          if (factory.singleton) {
+            callback(factory());
+            result.push(factory());
+          }
+        }
+      }
+      return result;
+    }
   }
     
-  plasma.on(Address.EVENT, function (chemical, callback) {
+  plasma.on(synapse.address.EVENT, function (chemical, callback) {
     var address = chemical.address || "1";
     if (typeof address !== "string" || address === "__proto__" /* add other safe conditions here or handle the organellesMap better */)
       return false;
     var organel = this.organellesMap[chemical.address];
     if (organel) {
-      callback(transport.createInProcess(organel.instance));
+      callback(synapse.Transport.createInProcess(organel.instance));
       return true;
     }
     return false;
@@ -33,7 +50,15 @@ module.exports = function Nucleus(plasma, dna){
 }
 
 module.exports.prototype = {
-  resolveFactory: function (json) {
+  resolveFactoryByName: function (id) {
+    var cached = this.definitionMap[id];
+    if (typeof cached === "undefined") {
+      cached = this.resolveFactory(this.dna[id]);
+      this.definitionMap[id] = cached;
+    }
+    return cached;
+  }
+  , resolveFactory: function (json) {
     var entries = module.exports.entries;
     var type = json._ || "poso";
     return entries[type].call(this, json);
@@ -74,12 +99,19 @@ module.exports.prototype = {
     }
     return config;
   }
+  , register: function (instance) {
+    instance.address = uuid.v1();
+    this.organellesMap[instance.address] = { "instance": instance };
+    return instance;
+  }
 }
+
 
 module.exports.entries = {
   "poso": function (json) {
     var OrganelClass = this.getPlainOldOrganel(json);
-    var instance = new OrganelClass(this.plasma, getConfig(plasma, json));
+    var instance = new OrganelClass(this.plasma, this.getConfig(json));
+    instance = this.register(instance);
     
     var result = function () {
       return instance;
@@ -92,14 +124,14 @@ module.exports.entries = {
     var OrganelClass = this.getPlainOldOrganel(json);
    
     var result = function () {
-      return new OrganelClass(this.plasma, getConfig(plasma, json));;
+      return this.register(new OrganelClass(this.plasma, this.getConfig(json)));
     }
     result.singleton = false;
     
     return result;
   }
   , "mapFinal": function (json) {
-    var map = Object.freeze(json);
+    var map = this.register(Object.freeze(json));
     var result = function () {
       return map;
     }
@@ -107,12 +139,6 @@ module.exports.entries = {
     return result;
   }
   , "ref": function (json) {
-    var id = json.ref;
-    var cached = this.definitionMap[id];
-    if (typeof cached === "undefined") {
-      cached = this.resolveFactory(this.dna[id]);
-      this.definitionMap[id] = cached;
-    }
-    return cached;
+    return this.resolveFactoryByName(json.ref)
   }
 }
