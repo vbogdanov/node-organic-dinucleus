@@ -1,0 +1,26 @@
+{
+  "author": "Valeri Bogdanov",
+  "concept": "Valeri Bogdanov",
+  "name": "organic-dinucleus",
+  "version": "0.0.1",
+  "repository": {
+    "type": "git",
+    "url": "git://github.com/VarnaLab/node-organic-dinucleus.git"
+  },
+  "main": "./index.js",
+  "dependencies": {
+    "organic":"0.1.1",
+    "node-uuid":"latest"
+  },
+  "directories": {
+    "lib": "./lib",
+    "examples": "./examples"
+  },
+  "devDependencies": {
+    "jasmine-node": "latest"
+  },
+  "optionalDependencies": {},
+  "engines": {
+    "node": "*"
+  }
+}
