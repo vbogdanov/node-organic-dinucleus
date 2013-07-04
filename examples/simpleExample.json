@@ -1,0 +1,27 @@
+{
+  "view":"!pathForRequire"
+  
+  "mycontroller": { "_": "poso"
+    , "source": "lib/mycontroller"
+    , "config": {
+      "static":"data"
+    }
+    , "inject": {
+      "view": "#view"
+      , "model": { "_": "poso"
+        , "source": "back/myModel"
+        , "config": { 
+          "times": 3 
+        }
+        , "inject": {
+          "state.value": "#base"
+        }
+      }
+      , "data": "#base"
+    }
+  }
+  , "base": { "_": "mapFinal"
+    , "a": 3
+    , "b": 5
+  }
+}
