@@ -227,4 +227,36 @@ describe("Nucleus", function(){
     expect(nucleus.organellesMap[address]).toBeTruthy();
     realPlasma.message(address, DATA);
   });
+  
+  it("allows adding new types of entities (in addition to popo, poso, mapFinal and ref)", function () {
+    var realPlasma = (new organic.Plasma()).use(synapse.Plasma);
+    var expected = { 'expected':true };
+    /* from lib/DINucleus.js:
+      * 
+      * This object (DINucleus.entries) describes all possible entity types ('_' values)
+      * each entity is described by a function that
+      * 1. is invoked in the context of a DINucleus instance
+      * 2. is passed the json describing the entity as its only parameter
+      * 3. returning a factory function that:
+      *      3.1 accepts no parameters
+      *      3.2 has a property 'singleton' that equals true if multiple invocations result in the same instance
+      *
+      */
+    Nucleus.entries.test = function () {
+      var res = function () {
+        return expected;
+      }
+      res.singleton = true;
+      return res;
+    }
+    
+    nucleus = new Nucleus(plasma, {
+      "example": { '_':'test'
+        //nothing here
+      }
+    });
+    
+    var object = nucleus.build("example");
+    expect(object).toBe(expected);
+  });
 });
