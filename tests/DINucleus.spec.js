@@ -259,4 +259,23 @@ describe("Nucleus", function(){
     var object = nucleus.build("example");
     expect(object).toBe(expected);
   });
+  
+  it("recognizes ref shorthand", function(){
+    var success = false;
+    nucleus = new Nucleus(plasma, {
+      "actual": { "_":"poso"
+        , "source": BasicOrganel
+      }
+      , "example": '#actual'
+    });
+    
+    var object = nucleus.build("example");
+    expectBasicOrganel(object);
+    
+    //confirm singleton
+    var object2 = nucleus.build("example");
+    expectBasicOrganel(object2);
+    
+    expect(object).toBe(object2);
+  });
 });
