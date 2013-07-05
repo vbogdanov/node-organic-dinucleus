@@ -173,6 +173,56 @@ describe("Nucleus", function(){
     expect(object).toBeTruthy();
     expect(success).toBe(1);
     expect(object.superb).toBe(true);
+    var address = object.config.target; //this one should be private in normal organels
+    expect(nucleus.organellesMap[address]).toBeTruthy();
+    realPlasma.message(address, DATA);
+  });
+  
+  it("allows sending messages to the injected objects", function(next){
+    var success = 0;
+    var DATA = {};
+    var realPlasma = (new organic.Plasma()).use(synapse.Plasma);
+    
+    nucleus = new Nucleus(realPlasma, {
+      "example": { "_":"poso"
+        , "source": function (plasma, config) {
+          success ++;
+          this.superb = true;
+          this.config = config;
+        }
+        , "inject": {
+          "target":{ "_":"poso"
+            , "source": "tests/synapticReceiver"
+            , "config": {
+              "messaged": function (data) {
+                console.log("outer injected");
+                //this is config
+                expect(data).toBe(DATA);
+                //plasma will be accessible from the organel
+                realPlasma.message(this.hello, DATA);
+              }
+            }
+            , "inject": {
+              "hello": { "_":"poso"
+                , "source": "tests/synapticReceiver"
+                , "config": {
+                  "messaged": function (data) {
+                    expect(data).toBe(DATA);
+                    console.log("inner injected");
+                    next();
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    });
+    
+    var object = nucleus.build("example");
+    expect(object).toBeTruthy();
+    expect(success).toBe(1);
+    expect(object.superb).toBe(true);
     var address = object.config.target;
     expect(nucleus.organellesMap[address]).toBeTruthy();
     realPlasma.message(address, DATA);
