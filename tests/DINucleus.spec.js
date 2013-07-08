@@ -1,6 +1,5 @@
 var Nucleus = require("../index");
-var organic = require("organic");
-var synapse = require("organic-synapse");
+//depends on node-organic, but not in code
 
 describe("Nucleus", function(){
   var plasma = {
@@ -21,7 +20,7 @@ describe("Nucleus", function(){
   
   it("creates singleton by name", function(){
     var success = false;
-    nucleus = new Nucleus(plasma, {
+    var nucleus = new Nucleus(plasma, {
       "example": { "_":"poso"
         , "source": BasicOrganel
       }
@@ -38,7 +37,7 @@ describe("Nucleus", function(){
   });
   
   it("creates prototypes by name", function(){
-    nucleus = new Nucleus(plasma, {
+    var nucleus = new Nucleus(plasma, {
       "example": { "_":"popo"
         , "source": BasicOrganel
       }
@@ -60,7 +59,7 @@ describe("Nucleus", function(){
       , "done": "true"
     }
     
-    nucleus = new Nucleus(plasma, {
+    var nucleus = new Nucleus(plasma, {
       "example": map
     });
     
@@ -75,7 +74,7 @@ describe("Nucleus", function(){
   
   it("returns ref by name", function(){
     var success = false;
-    nucleus = new Nucleus(plasma, {
+    var nucleus = new Nucleus(plasma, {
       "actual": { "_":"poso"
         , "source": BasicOrganel
       }
@@ -96,7 +95,7 @@ describe("Nucleus", function(){
   
   it("creates singletons when build() is invoked", function(){
 
-    nucleus = new Nucleus(plasma, {
+    var nucleus = new Nucleus(plasma, {
       "example": { "_":"poso"
         , "source": BasicOrganel
         , "config":{ "test": 1 }
@@ -115,53 +114,21 @@ describe("Nucleus", function(){
     expect(objects[0].test).toBe(1);
     expect(objects[1].test).toBe(2);
   });
-  
-  it("passes addressed of injected objects", function(){
-    var success = 0;
-    nucleus = new Nucleus(plasma, {
-      "example": { "_":"poso"
-        , "source": function (plasma, config) {
-          success ++;
-          this.superb = true;
-          this.config = config;
-        }
-        , "inject": {
-          "target":{ "_":"poso"
-            , "source": "tests/synapticReceiver"
-          }
-        }
-      }
-    });
     
-    var object = nucleus.build("example");
-    expect(object).toBeTruthy();
-    expect(success).toBe(1);
-    expect(object.superb).toBe(true);
-    var address = object.config.target;
-    expect(nucleus.organellesMap[address]).toBeTruthy();
-    
-  });
-  
-  it("allows sending messages to the injected objects", function(next){
-    var success = 0;
+  it("injects objects as part of the config", function(done){
     var DATA = {};
-    var realPlasma = (new organic.Plasma()).use(synapse.Plasma);
     
-    nucleus = new Nucleus(realPlasma, {
+    var nucleus = new Nucleus(plasma, {
       "example": { "_":"poso"
-        , "source": function (plasma, config) {
-          success ++;
-          this.superb = true;
-          this.config = config;
-        }
+        , "source": BasicOrganel
         , "inject": {
-          "target":{ "_":"poso"
+          "test":{ "_":"poso"
             , "source": "tests/synapticReceiver"
             , "config": {
               "messaged": function (data) {
                 expect(data).toBe(DATA);
                 console.log("I'm on top of the world!");
-                next();
+                done();
               }
             }
           }
@@ -170,28 +137,18 @@ describe("Nucleus", function(){
     });
     
     var object = nucleus.build("example");
-    expect(object).toBeTruthy();
-    expect(success).toBe(1);
-    expect(object.superb).toBe(true);
-    var address = object.config.target; //this one should be private in normal organels
-    expect(nucleus.organellesMap[address]).toBeTruthy();
-    realPlasma.message(address, DATA);
+    expectBasicOrganel(object);
+    object.test && object.test.message(DATA);
   });
   
-  it("allows sending messages to the injected objects", function(next){
-    var success = 0;
+  it("support nested injection definition", function(done){
     var DATA = {};
-    var realPlasma = (new organic.Plasma()).use(synapse.Plasma);
     
-    nucleus = new Nucleus(realPlasma, {
+    var nucleus = new Nucleus(plasma, {
       "example": { "_":"poso"
-        , "source": function (plasma, config) {
-          success ++;
-          this.superb = true;
-          this.config = config;
-        }
+        , "source": BasicOrganel
         , "inject": {
-          "target":{ "_":"poso"
+          "test":{ "_":"poso"
             , "source": "tests/synapticReceiver"
             , "config": {
               "messaged": function (data) {
@@ -199,7 +156,7 @@ describe("Nucleus", function(){
                 //this is config
                 expect(data).toBe(DATA);
                 //plasma will be accessible from the organel
-                realPlasma.message(this.hello, DATA);
+                this.hello.message(DATA);
               }
             }
             , "inject": {
@@ -209,7 +166,7 @@ describe("Nucleus", function(){
                   "messaged": function (data) {
                     expect(data).toBe(DATA);
                     console.log("inner injected");
-                    next();
+                    done();
                   }
                 }
               }
@@ -220,17 +177,20 @@ describe("Nucleus", function(){
     });
     
     var object = nucleus.build("example");
-    expect(object).toBeTruthy();
-    expect(success).toBe(1);
-    expect(object.superb).toBe(true);
-    var address = object.config.target;
-    expect(nucleus.organellesMap[address]).toBeTruthy();
-    realPlasma.message(address, DATA);
+    expectBasicOrganel(object);
+    object.test && object.test.message(DATA);
   });
   
   it("allows adding new types of entities (in addition to popo, poso, mapFinal and ref)", function () {
-    var realPlasma = (new organic.Plasma()).use(synapse.Plasma);
     var expected = { 'expected':true };
+    
+        
+    var nucleus = new Nucleus(plasma, {
+      "example": { '_':'test'
+        //nothing here
+      }
+    });
+
     /* from lib/DINucleus.js:
       * 
       * This object (DINucleus.entries) describes all possible entity types ('_' values)
@@ -242,7 +202,7 @@ describe("Nucleus", function(){
       *      3.2 has a property 'singleton' that equals true if multiple invocations result in the same instance
       *
       */
-    Nucleus.entries.test = function () {
+    nucleus.entries.test = function () {
       var res = function () {
         return expected;
       }
@@ -250,19 +210,13 @@ describe("Nucleus", function(){
       return res;
     }
     
-    nucleus = new Nucleus(plasma, {
-      "example": { '_':'test'
-        //nothing here
-      }
-    });
-    
     var object = nucleus.build("example");
     expect(object).toBe(expected);
   });
   
   it("recognizes ref shorthand", function(){
     var success = false;
-    nucleus = new Nucleus(plasma, {
+    var nucleus = new Nucleus(plasma, {
       "actual": { "_":"poso"
         , "source": BasicOrganel
       }
