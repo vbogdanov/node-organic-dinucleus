@@ -8,6 +8,7 @@
 	"maxparams":3,
 	"maxdepth":2,
 	"maxstatements":8,
+	"eqeqeq": true,
 	"globals": {
 		"require": false,
 		"module": true,
