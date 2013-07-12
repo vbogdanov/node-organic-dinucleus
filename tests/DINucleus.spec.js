@@ -1,7 +1,13 @@
-var Nucleus = require("../index");
+/* global describe: false */
+/* global it: false */
+/* global expect: false */
+/* jshint maxstatements: 30 */
+'use strict';
+
+var Nucleus = require('../index');
 //depends on node-organic, but not in code
 
-describe("Nucleus", function(){
+describe('Nucleus', function(){
   var plasma = {
     on: function () {},
     emit: function () {}
@@ -18,89 +24,89 @@ describe("Nucleus", function(){
     expect(object.superb).toBe(true);
   }
   
-  it("creates singleton by name", function(){
+  it('creates singleton by name', function(){
     var success = false;
     var nucleus = new Nucleus(plasma, {
-      "example": { "_":"poso",
-        "source": BasicOrganel
+      'example': { '_':'poso',
+        'source': BasicOrganel
       }
     });
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expectBasicOrganel(object);
     
     //confirm singleton
-    var object2 = nucleus.build("example");
+    var object2 = nucleus.build('example');
     expectBasicOrganel(object2);
     expect(object).toBe(object2);
   });
   
-  it("creates prototypes by name", function(){
+  it('creates prototypes by name', function(){
     var nucleus = new Nucleus(plasma, {
-      "example": { "_":"popo",
-        "source": BasicOrganel
+      'example': { '_':'popo',
+        'source': BasicOrganel
       }
     });
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expectBasicOrganel(object);
     
     //confirm not singleton (new instance every time)
-    var object2 = nucleus.build("example");
+    var object2 = nucleus.build('example');
     expectBasicOrganel(object2);
     expect(object).not.toBe(object2);
   });
   
-  it("creates mapFinal by name", function(){
-    var map = { "_":"mapFinal",
-      "test": "success",
-      "done": "true"
+  it('creates mapFinal by name', function(){
+    var map = { '_':'mapFinal',
+      'test': 'success',
+      'done': 'true'
     };
     
     var nucleus = new Nucleus(plasma, {
-      "example": map
+      'example': map
     });
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expect(object).toEqual(map);
     
     //confirm not singleton (new instance every time)
-    var object2 = nucleus.build("example");
+    var object2 = nucleus.build('example');
         
     expect(object).toBe(object2);
   });
   
-  it("returns ref by name", function(){
+  it('returns ref by name', function(){
     var success = false;
     var nucleus = new Nucleus(plasma, {
-      "actual": { "_":"poso",
-        "source": BasicOrganel
+      'actual': { '_':'poso',
+        'source': BasicOrganel
       },
-      "example": {  "_":"ref",
-        "ref":"actual"
+      'example': {  '_':'ref',
+        'ref':'actual'
       }
     });
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expectBasicOrganel(object);
     
     //confirm singleton
-    var object2 = nucleus.build("example");
+    var object2 = nucleus.build('example');
     expectBasicOrganel(object2);
     
     expect(object).toBe(object2);
   });
   
-  it("creates singletons when build() is invoked", function(){
+  it('creates singletons when build() is invoked', function(){
 
     var nucleus = new Nucleus(plasma, {
-      "example": { "_":"poso",
-        "source": BasicOrganel,
-        "config":{ "test": 1 }
+      'example': { '_':'poso',
+        'source': BasicOrganel,
+        'config':{ 'test': 1 }
       },
-      "example2": { "_":"poso",
-        "source": BasicOrganel,
-        "config":{ "test": 2 } 
+      'example2': { '_':'poso',
+        'source': BasicOrganel,
+        'config':{ 'test': 2 } 
       }
     });
     
@@ -113,19 +119,18 @@ describe("Nucleus", function(){
     expect(objects[1].test).toBe(2);
   });
     
-  it("injects objects as part of the config", function(done){
+  it('injects objects as part of the config', function(done){
     var DATA = {};
     
     var nucleus = new Nucleus(plasma, {
-      "example": { "_":"poso",
-        "source": BasicOrganel,
-        "inject": {
-          "test":{ "_":"poso",
-            "source": "tests/synapticReceiver",
-            "config": {
-              "messaged": function (data) {
+      'example': { '_':'poso',
+        'source': BasicOrganel,
+        'inject': {
+          'test':{ '_':'poso',
+            'source': 'tests/synapticReceiver',
+            'config': {
+              'messaged': function (data) {
                 expect(data).toBe(DATA);
-                console.log("I'm on top of the world!");
                 done();
               }
             }
@@ -134,36 +139,36 @@ describe("Nucleus", function(){
       }
     });
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expectBasicOrganel(object);
     object.test.message(DATA);
   });
   
-  it("support nested injection definition", function(done){
+  it('support nested injection definition', function(done){
     var DATA = {};
     
     var nucleus = new Nucleus(plasma, {
-      "example": { "_":"poso",
-        "source": BasicOrganel,
-        "inject": {
-          "test":{ "_":"poso",
-            "source": "tests/synapticReceiver",
-            "config": {
-              "messaged": function (data) {
-                console.log("outer injected");
+      'example': { '_':'poso',
+        'source': BasicOrganel,
+        'inject': {
+          'test':{ '_':'poso',
+            'source': 'tests/synapticReceiver',
+            'config': {
+              'messaged': function (data) {
+                console.log('outer injected');
                 //this is config
                 expect(data).toBe(DATA);
                 //plasma will be accessible from the organel
                 this.hello.message(DATA);
               }
             },
-            "inject": {
-              "hello": { "_":"poso",
-                "source": "tests/synapticReceiver",
-                "config": {
-                  "messaged": function (data) {
+            'inject': {
+              'hello': { '_':'poso',
+                'source': 'tests/synapticReceiver',
+                'config': {
+                  'messaged': function (data) {
                     expect(data).toBe(DATA);
-                    console.log("inner injected");
+                    console.log('inner injected');
                     done();
                   }
                 }
@@ -174,17 +179,17 @@ describe("Nucleus", function(){
       }
     });
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expectBasicOrganel(object);
     object.test.message(DATA);
   });
   
-  it("allows adding new types of entities (in addition to popo, poso, mapFinal and ref)", function () {
+  it('allows adding new types of entities (in addition to popo, poso, mapFinal and ref)', function () {
     var expected = { 'expected':true };
     
         
     var nucleus = new Nucleus(plasma, {
-      "example": { '_':'test'
+      'example': { '_':'test'
         //nothing here
       }
     });
@@ -208,24 +213,24 @@ describe("Nucleus", function(){
       return res;
     };
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expect(object).toBe(expected);
   });
   
-  it("recognizes ref shorthand", function(){
+  it('recognizes ref shorthand', function(){
     var success = false;
     var nucleus = new Nucleus(plasma, {
-      "actual": { "_":"poso",
-        "source": BasicOrganel
+      'actual': { '_':'poso',
+        'source': BasicOrganel
       },
-      "example": '#actual'
+      'example': '#actual'
     });
     
-    var object = nucleus.build("example");
+    var object = nucleus.build('example');
     expectBasicOrganel(object);
     
     //confirm singleton
-    var object2 = nucleus.build("example");
+    var object2 = nucleus.build('example');
     expectBasicOrganel(object2);
     
     expect(object).toBe(object2);
