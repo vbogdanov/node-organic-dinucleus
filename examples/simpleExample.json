@@ -1,4 +1,4 @@
-{
+/* {
   "view":"!pathForRequire"
   
   "mycontroller": { "_": "poso"
@@ -23,5 +23,15 @@
   , "base": { "_": "mapFinal"
     , "a": 3
     , "b": 5
+  }
+}*/
+
+{
+  "scope": {
+    "chemName": {
+      "type": "typeName",
+      "other": "value"
+    },
+    "chemName2":"#shorthandDefinition"
   }
 }
