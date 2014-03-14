@@ -3,12 +3,13 @@ if (typeof define !== 'function') {
 }
 
 define(
-['reactions', 'requirejs', 'src/context', 'src/types/const', 'src/types/instance', 'src/types/module', 'src/types/alias', 'src/types/exec'], 
-function (R, requirejs, Context, Const, Instance, Module, Alias, Exec) {
+['reactions', 'requirejs', 'safemap', 'src/context', 'src/types/const', 'src/types/instance',
+ 'src/types/module', 'src/types/alias', 'src/types/exec'], 
+function (R, requirejs, SafeMap, Context, Const, Instance, Module, Alias, Exec) {
   var exports;
 
   function configureLoaders(config, done) {
-    var loaderNames =  config.loaders || ['simpleAMDLoader'];
+    var loaderNames =  config.loaders || ['simpleamdloader'];
     requirejs(loaderNames, function () {
       var loaders = Array.prototype.slice.call(arguments, 0);
       done(false, R.make.first(loaders));
@@ -32,7 +33,8 @@ function (R, requirejs, Context, Const, Instance, Module, Alias, Exec) {
 
   function configureShorthands(config, done) {
     var shorthands = {
-      '#':['alias','id']
+      '#':['alias','id'],
+      '=':['const', 'value']
     };
     var extShorts = config.shorthands;
     for (var k in extShorts) {
@@ -46,39 +48,80 @@ function (R, requirejs, Context, Const, Instance, Module, Alias, Exec) {
     defaulttype = arg[0].defaultType || 'instance',
     context = new Context(defaulttype, arg[1], arg[2], arg[3]),
     contextConfig = arg[0].context,
-    id,
-    factory,
-    factories = {},
-    beanDesc;
+    createBeanFactory = function (beanDescr, done) {
+      context.createBeanFactory(beanDescr, R.fastdone(done, function (factory) {
+        factory.scope = beanDescr.scope;
+        done(false, factory);
+      }));
+    };
 
-    //TODO: parallel
-    for (id in contextConfig) {
-      beanDesc = contextConfig[id];
-      context.createBeanFactory(beanDesc, function (err, factory) {
-        factory.id = id;
-        factory.scope = beanDesc.scope || 'singleton';
-        factories[id] = factory;
-      });
-    }
-
-    done(false, factories);
+    R.fn.mapHash(createBeanFactory, contextConfig, done);
   }
+
+  function buildEnvironment(factories, done) {
+    var SCOPES = {
+      'singleton': new SafeMap(),
+      'prototype': new NoMap()
+    };
+
+    var environment = {
+      'get': function (id, done) {
+        var factory = factories[id];
+        
+        if (typeof factory !== 'function') {
+          return done(new Error('no such bean described:' + id));
+        }
+        
+        var scope = factory.scope || 'singleton';
+        
+        if (SCOPES[scope].has(id)) {
+          return SCOPES[scope].get(id);
+        } else {
+          factory(environment, R.fastdone(done, function (val) {
+            SCOPES[scope].set(id, val);
+            done(false, val);
+          }));
+        }
+      }
+    };
+
+    done(false, environment);
+  };
 
   exports = function (config, done) {
     //self configuration
-    R.fn.collectParallel([
-        R.echo,
-        configureLoaders,
-        configureTypes,
-        configureShorthands
-      ], 
-      config, 
-      R.fastdone(done, function (args) {
-        buildFactories(args, done);
-      })
-    );
+    /*
+    {
+      defaultType: 'instance',                              //defaults to 'instance'
+      loaders: ['array','of','loader','modules'],           //defaults to ['simpleAMDLoader']
+      types: { 'eval': function (beanDescr, done) {...} },  //extender types
+      shorthands: { '$':['eval','expr'] },                  //extender shorthands
+      context: {
+        //bean description by id
+        simple: {
+          src: 'example/simple'
+        }
+      }
+    }
+    */
+    var evalConfig = R.make.collectParallel([
+      R.echo,
+      configureLoaders,
+      configureTypes,
+      configureShorthands
+    ]);
 
+    R.fn.waterfall([evalConfig, buildFactories, buildEnvironment], config, done);
   };
+
+  function NoMap() {
+    this.has = function (str) {
+      return false;
+    }
+    this.set = function (arg) {
+      //ignore
+    }
+  }
 
   return exports;
 });

@@ -9,10 +9,28 @@ define(['reactions'], function (R) {
     var self = this;
 
     self.createBeanFactory = function(beanDesc, done) {
+      if (typeof beanDesc === 'string') {
+        beanDesc = self.createBeanDesc(beanDesc);
+      }
+      if (!beanDesc) {
+        return done(new Error('bean description is required'));
+      }
       getType(beanDesc, R.done(done, function (t) {
         t({'bean': beanDesc, 'context': self }, done);
       }));      
     };
+
+    self.createBeanDesc = function (shorthand) {
+      var sh = shorthands[shorthand.charAt(0)];
+      if (!sh) {
+        //no shorthand found, caller will stop execution when null is returned
+        return null;
+      }
+      var beanDesc = {};
+      beanDesc.type = sh[0];
+      beanDesc[sh[1]] = shorthand.substr(1);
+      return beanDesc;
+    }
 
     self.loadByName = function (fqn, done) {
       loadReaction(fqn, done);

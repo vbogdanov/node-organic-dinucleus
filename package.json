@@ -15,7 +15,9 @@
   "dependencies": {
     "safemap": "~0.2.0",
     "reactions": "~0.0.12",
-    "amdefine": "~0.1.0"
+    "amdefine": "~0.1.0",
+    "requirejs": "~2.1.11",
+    "simpleamdloader": "0.0.1"
   },
   "devDependencies": {
     "jasmine-node": "~1.11.0",

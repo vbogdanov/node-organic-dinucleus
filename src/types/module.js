@@ -11,13 +11,13 @@ define(['requirejs'], function (requirejs) {
     context = options.context,
     name = descr.name;
 
-    if (typeof id !== 'string') {
+    if (typeof name !== 'string') {
       return done(new Error('name property must be string'));
     }
 
     done(false, function (environment, d) {
       requirejs([name], function (mod) {
-        done(false, mod);
+        d(false, mod);
       });
     });
   }
